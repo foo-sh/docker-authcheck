@@ -2,11 +2,11 @@ FROM docker.io/library/python:3.11.1-slim
 
 COPY requirements.txt /usr/local/src
 
-RUN set -eux && \
+RUN set -eux ; \
     apt-get update ; \
     apt-get -y upgrade ; \
     rm -rf /var/lib/apt/lists/* ; \
-    pip3 install -r /usr/local/src/requirements.txt && \
+    pip3 install --root-user-action=ignore -r /usr/local/src/requirements.txt ; \
     rm -f /usr/local/src/requirements.txt
 
 RUN set -eux ; \ 
