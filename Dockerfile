@@ -10,7 +10,7 @@ RUN set -eux ; \
     rm -f /usr/local/src/requirements.txt
 
 RUN set -eux ; \ 
-    find / -path /proc -prune -o -path /sys -prune -perm /06000 -type f -exec chmod -v a-s {} \;
+    find / \! \( -path /proc -prune -o -path /sys -prune \) -perm /06000 -type f -exec chmod -v a-s {} \;
 
 RUN set -eux ; \
     mkdir -m 0755 /var/empty ; \
