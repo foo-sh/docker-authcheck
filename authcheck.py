@@ -1,6 +1,7 @@
 import os
 import ssl
 import ldap3
+import logging
 
 from flask import Flask, abort, jsonify, request
 from werkzeug.exceptions import HTTPException
@@ -26,6 +27,9 @@ def auth():
         or "password" not in request.json
     ):
         abort(400)
+    if os.getenv("LDAP_URI") is None:
+        api.logger.error("Configuration failed, LDAP_URI not set")
+        abort(500)
     try:
         conn = ldap3.Connection(
             ldap3.Server(
@@ -42,7 +46,15 @@ def auth():
             ),
         )
     except ldap3.core.exceptions.LDAPBindError:
+        api.logger.info(
+            "Authentication check failed for user {}".format(
+                repr(request.json["username"])
+            )
+        )
         abort(401)
+    except ldap3.core.exceptions.LDAPSocketOpenError as e:
+        api.logger.error(repr(e))
+        abort(500)
     userdn = conn.extend.standard.who_am_i().split(":", 2)[1]
     conn.search(
         search_base="",
@@ -62,7 +74,15 @@ def auth():
             groups.append(group["attributes"]["cn"][0])
     conn.unbind()
     if "group" in request.json and request.json["group"] not in groups:
+        api.logger.info(
+            "Authorization failed, user {} not in group {}".format(
+                repr(request.json["username"]), repr(request.json["group"])
+            )
+        )
         abort(403)
+    api.logger.info(
+        "Authentication succeeded for user {}".format(repr(request.json["username"]))
+    )
     return jsonify(
         {"dn": userdn, "username": request.json["username"], "groups": groups}
     )
@@ -70,3 +90,7 @@ def auth():
 
 if __name__ == "__main__":
     api.run(host="127.0.0.1", port=8000, debug=True)
+else:
+    gunicorn_logger = logging.getLogger("gunicorn.error")
+    api.logger.handlers = gunicorn_logger.handlers
+    api.logger.setLevel(gunicorn_logger.level)
