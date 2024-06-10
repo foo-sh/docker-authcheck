@@ -1,4 +1,4 @@
-FROM docker.io/library/python:3.12.3-slim
+FROM docker.io/library/python:3.12.4-slim
 
 COPY requirements.txt /usr/local/src
 
