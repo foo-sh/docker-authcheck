@@ -56,6 +56,7 @@ def auth():
         api.logger.error(repr(e))
         abort(500)
     userdn = conn.extend.standard.who_am_i().split(":", 2)[1]
+
     conn.search(
         search_base="",
         search_filter="(objectClass=*)",
@@ -72,7 +73,6 @@ def auth():
     if len(conn.response) > 0:
         for group in conn.response:
             groups.append(group["attributes"]["cn"][0])
-    conn.unbind()
     if "group" in request.json and request.json["group"] not in groups:
         api.logger.info(
             "Authorization failed, user {} not in group {}".format(
@@ -80,11 +80,39 @@ def auth():
             )
         )
         abort(403)
+
+    conn.search(
+        search_base=userdn,
+        search_filter="(objectClass=inetOrgPerson)",
+        attributes="displayname",
+    )
+    if len(conn.response) != 1:
+        api.logger.error(
+            "Authentication succeeded for user {}, but user not found from LDAP".format(
+                repr(request.json["username"])
+            )
+        )
+        abort(403)
+    try:
+        realname = conn.response[0]["attributes"]["displayName"]
+    except IndexError:
+        api.logger.error(
+            "Authentication succeeded for user {}, but LDAP did not return all user info".format(
+                repr(request.json["username"])
+            )
+        )
+        abort(403)
+
     api.logger.info(
         "Authentication succeeded for user {}".format(repr(request.json["username"]))
     )
     return jsonify(
-        {"dn": userdn, "username": request.json["username"], "groups": groups}
+        {
+            "dn": userdn,
+            "username": request.json["username"],
+            "name": realname,
+            "groups": groups,
+        }
     )
 
 
