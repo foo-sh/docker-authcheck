@@ -1,0 +1,29 @@
+---
+name: CI
+# yamllint disable-line rule:truthy
+on:
+  push:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ruff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Get python version
+        run: sed -n "s/^FROM \(.*\/\)\?python:\([0-9\.]\+\).*/\2/p" Dockerfile > .python-version
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+      - name: Install python dependencies
+        run: pip3 install ruff
+      - name: Run ruff check
+        run: ruff check authcheck.py
+      - name: Run ruff format
+        run: ruff format --check authcheck.py
