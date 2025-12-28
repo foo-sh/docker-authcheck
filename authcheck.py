@@ -84,6 +84,7 @@ def auth():
     conn.search(
         search_base=userdn,
         search_filter="(objectClass=*)",
+        search_scope=ldap3.BASE,
         attributes=["cn", "displayname"],
     )
     if len(conn.response) != 1:
