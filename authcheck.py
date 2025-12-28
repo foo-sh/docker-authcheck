@@ -83,8 +83,8 @@ def auth():
 
     conn.search(
         search_base=userdn,
-        search_filter="(objectClass=inetOrgPerson)",
-        attributes="displayname",
+        search_filter="(objectClass=*)",
+        attributes=["cn", "displayname"],
     )
     if len(conn.response) != 1:
         api.logger.error(
@@ -95,6 +95,8 @@ def auth():
         abort(403)
     if conn.response[0]["attributes"]["displayName"] != []:
         realname = conn.response[0]["attributes"]["displayName"]
+    elif conn.response[0]["attributes"]["cn"] != []:
+        realname = conn.response[0]["attributes"]["cn"][0]
     else:
         api.logger.error(
             "Authentication succeeded for user {}, but LDAP did not return all user info".format(
