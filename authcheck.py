@@ -93,9 +93,9 @@ def auth():
             )
         )
         abort(403)
-    try:
+    if conn.response[0]["attributes"]["displayName"] != []:
         realname = conn.response[0]["attributes"]["displayName"]
-    except IndexError:
+    else:
         api.logger.error(
             "Authentication succeeded for user {}, but LDAP did not return all user info".format(
                 repr(request.json["username"])
