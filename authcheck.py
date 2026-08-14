@@ -1,8 +1,8 @@
+import logging
 import os
 import ssl
-import ldap3
-import logging
 
+import ldap3
 from flask import Flask, abort, jsonify, request
 from werkzeug.exceptions import HTTPException
 
